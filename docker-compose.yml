@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  api:
+    build: .
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+    - 4761:4761
+    command: gunicorn --workers 4 --bind 0.0.0.0:4761 --reload wsgi:app
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: Admin123
+      POSTGRES_USER: postgres
+      POSTGRES_DB: chatbotdb

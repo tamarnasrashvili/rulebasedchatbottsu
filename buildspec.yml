@@ -1,0 +1,39 @@
+version: 0.2
+
+env:
+  variables:
+    S3_BUCKET: 	kyc-idscan-build-data
+
+phases:
+  pre_build:
+    commands:
+      - echo $(pwd)
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --region eu-central-1 --no-include-email)
+      - KYC_IDSCAN_REPOSITORY_URI=612293362657.dkr.ecr.eu-central-1.amazonaws.com/kyc-idscan
+      - KYC_VERSION=1.0
+      - IMAGE_TAG=$(echo $KYC_VERSION.$CODEBUILD_BUILD_NUMBER)
+      - echo $IMAGE_TAG
+#      - echo copying files from s3
+#      - mkdir weights
+#      - aws s3 cp s3://${S3_BUCKET}/id-card-back.pkl weights/id-card-back.pkl
+#      - aws s3 cp s3://${S3_BUCKET}/id-card-front.pkl weights/id-card-front.pkl
+#      - echo done copying files from s3
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - echo $(pwd)
+      - docker build . -t $KYC_IDSCAN_REPOSITORY_URI:latest
+      - docker tag $KYC_IDSCAN_REPOSITORY_URI:latest $KYC_IDSCAN_REPOSITORY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $KYC_IDSCAN_REPOSITORY_URI:latest
+      - docker push $KYC_IDSCAN_REPOSITORY_URI:$IMAGE_TAG
+      - echo $(ls)
+      - echo $(pwd)
+      - printf '[{"name":"kyc-idscan","imageUri":"%s"}]' $KYC_IDSCAN_REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
